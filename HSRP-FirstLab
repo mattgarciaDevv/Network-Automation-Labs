@@ -1,0 +1,149 @@
+import netmiko
+import getpass
+
+VlanConfigs = [
+
+    "vlan 10",
+    "name Servers",
+    'exit',
+    'vlan 20',
+    'name Users',
+    'exit',
+    'vlan 99',
+    'name Management'
+]
+
+CSW1= [
+    'interface range gig0/0-1',
+    'switchport mode trunk',
+    'switchport trunk encapsulation dot1q',
+    'exit',
+    "ip routing",
+    #SVI10
+    'interface vlan 10',
+    'description Servers_SVI',
+    'ip address 10.10.10.2 255.255.255.0',
+    'standby 10 priority 110',
+    'standby 10 ip 10.10.10.1',
+    'standby 10 preemption',
+    'exit',
+    #SVI20
+    'interface vlan 20',
+    'description Users_SVI',
+    'ip address 10.10.20.2 255.255.255.0',
+    'standby 20 priority 100',
+    'standby 20 ip 10.10.20.1',
+    'standby 20 preemption',
+    'exit',
+    "router ospf 1",
+    'router-id 1.1.1.1',
+    'network 10.10.10.0 0.0.0.255 area 0',
+    'network 10.10.20.0 0.0.0.255 area 0',
+    'exit'
+
+]
+
+CSW2 = [
+    'interface range gig0/0-1',
+    'switchport mode trunk',
+    'switchport trunk encapsulation dot1q',
+    'exit',
+    'ip routing',
+    #SVI 10
+    'interface vlan 10',
+    'description Servers_SVI',
+    'ip address 10.10.10.3 255.255.255.0',
+    'standby 10 priority 100',
+    'standby 10 ip 10.10.10.2',
+    'standby 10 preemption',
+    'exit',
+    #SVI 20
+    'interface vlan 20',
+    'description Users_SVI',
+    'ip address 10.10.20.3 255.255.255.0',
+    'standby 20 priority 110',
+    'standby 20 ip 10.10.20.1',
+    'standby 20 preemption',
+    'exit',
+    "router ospf 1", #ospf
+    'router-id 2.2.2.2',
+    'network 10.10.10.0 0.0.0.255 area 0',
+    'network 10.10.20.0 0.0.0.255 area 0',
+    'exit'
+
+
+    
+
+
+]
+
+ASW1 = [
+
+    'interface range gig0/1-2',
+    'switchport mode trunk',
+    'switchport trunk encapsulation dot1q',
+    'exit'
+    ''
+]
+
+
+username_Entered = input("Enter device Username: ")
+password_Entered = getpass("Enter device password: ")
+secret_Entered = getpass("Enter enable password: ")
+
+CoreSW1 = {
+
+    "ip" : '10.10.0.1',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered
+}
+
+CoreSW2 = {
+
+    "ip" : '10.10.0.2',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered
+}
+
+AccessSW1 = {
+
+    "ip" : '10.10.0.3',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered   
+}
+
+iplist = ['10.10.0.1','10.10.0.2','10.10.0.3']
+for device in iplist :
+        Connection = netmiko.ConnectHandler(
+        ip = device,
+        device_type = 'cisco_ios',
+        username = username_Entered,
+        password = password_Entered,
+        secret = secret_Entered
+    )
+        if device == '10.10.0.1':
+            Connection.send_config_set(CSW1)
+            Connection.send_config_set(VlanConfigs)
+            print ("Core Switch 1 has been configured")
+            Connection.save_config()
+            Connection.disconnect()
+        elif device == '10.10.0.2':
+            Connection.send_config_set(CSW2)
+            Connection.send_config_set(VlanConfigs)
+            print ("Core Switch 2 has been configured")
+            Connection.save_config()
+            Connection.disconnect()
+        elif device == '10.10.0.3':
+            Connection.send_config_set(ASW1)
+            Connection.send_config_set(VlanConfigs)
+            print ("Access Switch 1 has been configured")
+            Connection.save_config()
+            Connection.disconnect()
+        else:
+            print ("\n Their is a device mismatch")

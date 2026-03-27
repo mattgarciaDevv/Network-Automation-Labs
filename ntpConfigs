@@ -1,0 +1,260 @@
+lab tasks
+
+Lab Goal: Standardizing and Validating NTP Configurations
+Your network operations team has identified that Network Time Protocol (NTP) configurations have drifted across devices. Some are missing servers, while others have incorrect settings. Your task is to write an automation script that audits and standardizes the NTP configuration across all network devices.
+
+Network Topology
+You have three devices in your environment:
+
+Core-SW1 (IP: 10.100.0.1)
+
+Dist-SW1 (IP: 10.100.0.10)
+
+Branch-RTR1 (IP: 10.100.0.20)
+
+Configuration Requirements
+The Company Standard:
+
+Primary NTP Server: 132.163.96.5 (must be configured with the prefer keyword)
+
+Secondary NTP Server: 132.163.96.6
+
+Source Interface: All NTP packets must be sourced from the Loopback0 interface.
+
+Authentication: NTP Authentication must be enabled with Key ID 10 using an MD5 hash of the key NTP_KEY_SECRET. The server configurations must trust this key.
+
+Your Script's Logic:
+
+Your script must perform the following actions for each device in the network:
+
+Part 1: Audit and Data Collection (The "Pull")
+
+Connect to the device.
+
+Retrieve Current Configuration: Execute show running-config | include ntp. You need to capture all lines related to the current NTP setup.
+
+Retrieve NTP Status: Execute show ntp associations and show ntp status. This is for validation later.
+
+Part 2: Validation (The "brains" of your script)
+
+Analyze the Configuration: Your script must parse the output from the show running-config command and determine if the device is compliant. It needs to check for the following:
+
+Is the primary NTP server (132.163.96.5) configured? Is the prefer keyword present for it?
+
+Is the secondary NTP server (132.163.96.6) configured?
+
+Is the source interface set to Loopback0?
+
+Is NTP authentication enabled and configured with key 10?
+
+Make a Decision:
+
+If the device's configuration is 100% compliant with the standard, the script should print a message like INFO: Device <hostname> is already compliant. No changes needed.
+
+If the device's configuration is NOT compliant in any way, the script must proceed to Part 3.
+
+Part 3: Remediation (The "Push")
+
+Build the Correct Configuration: If a device is found to be non-compliant, your script must build a list of commands to fix it. This involves:
+
+A no ntp ... command for every incorrect NTP configuration line found on the device.
+
+The complete, standardized set of NTP commands.
+
+ntp authenticate
+
+ntp authentication-key 10 md5 NTP_KEY_SECRET
+
+ntp server 132.163.96.5 prefer
+
+ntp server 132.163.96.6
+
+ntp source Loopback0
+
+ntp trusted-key 10
+
+Apply and Verify:
+
+Push the remediation configuration to the device.
+
+Print a message like SUCCESS: Device <hostname> has been remediated to standard NTP config.
+
+As a final verification step, re-run show ntp status and print the output to confirm the clock is synchronizing.
+___________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+import netmiko
+import getpass
+
+
+username_Entered = input("Enter device Username: ")
+password_Entered = getpass("Enter device password: ")
+secret_Entered = getpass("Enter enable password: ")
+
+
+
+correct_ntp = [
+        'ntp authenticate',
+        'ntp authentication-key 10 md5 NTP_KEY_SECRET',
+        'ntp trusted-key 10',
+        'ntp server 132.163.96.5 prefer',
+        'ntp server 132.163.96.6',
+        'ntp source Loopback0'
+]
+CoreSW1 = {
+
+    "ip" : '10.100.0.1',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered
+}
+
+DistSW1 = {
+
+    "ip" : '10.100.0.10',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered
+}
+
+BranchR1 = {
+
+
+
+
+
+
+BranchR1 = {
+
+    "ip" : '10.100.0.20',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered   
+}
+
+iplist = ["10.100.0.1","10.100.0.10","10.100.0.20"]
+for device in iplist :
+Print (f"Connecting to device: {device} ... ")
+connection = netmiko.ConnectHandler (
+  ip = device,
+  device_type' = "cisco_ios",
+  username" = username_Entered,
+  password" = password_Entered,
+  secret = secret_Entered   
+)
+connection.enable()
+
+print ("Auditing NTP configs ......")
+ntp_output = connection.send_command("sh run | i ntp")
+
+compliant = True
+
+if 'ntp server 132.163.96.5 prefer' not in ntp_output:
+        compliant = False
+if 'ntp server 132.163.96.6 ' not in ntp_output:
+        compliant = False
+if "ntp source Loopback 0" not in ntp_output:
+        compliant = False
+if 'ntp authenticate' not int ntp_output:
+        compliant = False
+if 'ntp authentication-key 10 md5 NTP_KEY_SECRET' not in ntp_output:
+        compliant = False
+if 'ntp trusted-key 10' not in ntp_output:
+        compliant = False
+
+
+
+if compliant = True:
+        print (f"Device {device} is already compliant. Good Job! ")
+else:
+        print (f"Device {device} is NOT compliant. Pushing out configs")
+        commands_removep[]
+        for line in ntp_output.splitlines():
+                if line.strip().startswith("ntp "):
+                commands_remove.apped(f"no {line.strip()}")
+
+
+connection.send_config_set(commands_remove)
+
+connection.send_config_set(correct_ntp)
+
+print (f"Device {device} has been remidiated")
+
+print("Verifying NTP status...")
+    final_ntp_status = connection.send_command("show ntp status")
+    print(final_ntp_status)
+
+connection.save_config()
+connection.disconnect()
+[kiosk@ZHTV-WS-201p Practice]$ nano ntpConf.py 
+[kiosk@ZHTV-WS-201p Practice]$ nano ntpConf.py 
+[kiosk@ZHTV-WS-201p Practice]$ nano ntpConf.py 
+[kiosk@ZHTV-WS-201p Practice]$ cat ntpConf.py 
+
+DistSW1 = {
+
+    "ip" : '10.100.0.10',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered
+}
+
+BranchR1 = {
+
+    "ip" : '10.100.0.20',
+    'device_type' : "cisco_ios",
+    "username" : username_Entered,
+    "password" : password_Entered,
+    "secret" : secret_Entered   
+}
+
+iplist = ["10.100.0.1","10.100.0.10","10.100.0.20"]
+for device in iplist :
+print (f"Connecting to device: {device} ... ")
+connection = netmiko.ConnectHandler (
+  ip = device,
+  device_type' = "cisco_ios",
+  username = username_Entered,
+  password = password_Entered,
+  secret = secret_Entered   
+)
+connection.enable()
+
+print ("Auditing NTP configs ......")
+ntp_output = connection.send_command("sh run | i ntp")
+
+compliant == True
+
+if 'ntp server 132.163.96.5 prefer' not in ntp_output:
+        compliant = False
+if 'ntp server 132.163.96.6 ' not in ntp_output:
+        compliant = False
+if "ntp source Loopback 0" not in ntp_output:
+        compliant = False
+if 'ntp authenticate' not in ntp_output:
+        compliant = False
+if 'ntp authentication-key 10 md5 NTP_KEY_SECRET' not in ntp_output:
+        compliant = False
+if 'ntp trusted-key 10' not in ntp_output:
+        compliant = False
+
+
+
+if compliant = True:
+        print (f"Device {device} is already compliant. Good Job! ")
+else:
+        print (f"Device {device} is NOT compliant. Pushing out configs")
+        commands_remove = []
+        for line in ntp_output.splitlines():
+                if line.strip().startswith("ntp "):
+                commands_remove.append(f"no {line.strip()}")
+                connection.send_config_set(commands_remove)
+                connection.send_config_set(correct_ntp)
+                print (f"Device {device} has been remidiated")
+                print("Verifying NTP status...")
+                final_ntp_status = connection.send_command("show ntp status")
+                print(final_ntp_status)
+                connection.save_config()
+connection.disconnect()
